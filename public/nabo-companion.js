@@ -317,6 +317,62 @@
       .nabo-overlay.open {
         display: block;
       }
+
+      .nabo-tooltip {
+        position: fixed;
+        bottom: ${BUBBLE_SIZE + 24 + 16 + 12}px;
+        right: 24px;
+        background-color: ${COLORS.darkNavy};
+        color: ${COLORS.white};
+        padding: 12px 12px 12px 12px;
+        border-radius: 8px;
+        border: 1px solid ${COLORS.cyan};
+        font-size: 13px;
+        max-width: 220px;
+        z-index: 999998;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+        animation: tooltipFadeIn 0.3s ease;
+        word-wrap: break-word;
+        line-height: 1.4;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      @keyframes tooltipFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .nabo-tooltip-text {
+        flex: 1;
+      }
+
+      .nabo-tooltip-close {
+        background: none;
+        border: none;
+        color: ${COLORS.mutedGray};
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        line-height: 1;
+        transition: color 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      .nabo-tooltip-close:hover {
+        color: ${COLORS.white};
+      }
     `;
     document.head.appendChild(style);
   }
@@ -369,7 +425,7 @@
     panel.innerHTML = `
       <div class="nabo-panel-header">
         <div style="display: flex; align-items: center;">
-          <img src="/chatbot.png" class="nabo-header-avatar" alt="Nabo Companion">
+          <img src="https://nbbot.netlify.app/chatbot.png" class="nabo-header-avatar" alt="Nabo Companion">
           <div class="nabo-panel-title">
             <div class="nabo-panel-title-main">Nabo Companion</div>
             <div class="nabo-panel-title-sub">Nabo Capital</div>
@@ -415,7 +471,7 @@
 
     addMessage(
       "assistant",
-      "Hello, I'm your Nabo Companion. How can I help you today?"
+      "Hello, I'm your Nabo Capital Companion. How can I help you today?"
     );
 
     return { panel, overlay, input };
@@ -454,6 +510,44 @@
     }
   }
 
+  function showGreetingTooltip() {
+    if (sessionStorage.getItem('nabo_greeted')) return;
+    sessionStorage.setItem('nabo_greeted', 'true');
+
+    const tooltip = document.createElement("div");
+    tooltip.className = "nabo-tooltip";
+
+    const textDiv = document.createElement("div");
+    textDiv.className = "nabo-tooltip-text";
+    textDiv.textContent = "Hi, I'm your Nabo Capital Companion. How can I help you today?";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "nabo-tooltip-close";
+    closeBtn.innerHTML = "&#x2715;";
+    closeBtn.setAttribute("aria-label", "Dismiss greeting");
+
+    tooltip.appendChild(textDiv);
+    tooltip.appendChild(closeBtn);
+
+    document.body.appendChild(tooltip);
+
+    const dismiss = () => {
+      tooltip.remove();
+    };
+
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dismiss();
+    });
+
+    tooltip.addEventListener("click", () => {
+      dismiss();
+      openPanel();
+    });
+
+    setTimeout(dismiss, 10000);
+  }
+
   function formatMessage(text) {
     return text
       .split('\n')
@@ -475,7 +569,7 @@
 
     if (role === 'assistant') {
       const avatar = document.createElement("img");
-      avatar.src = "/chatbot.png";
+      avatar.src = "https://nbbot.netlify.app/chatbot.png";
       avatar.className = "nabo-avatar";
       avatar.alt = "Nabo Companion";
       messageDiv.appendChild(avatar);
@@ -501,7 +595,7 @@
     typingDiv.id = "typing-indicator";
 
     const avatar = document.createElement("img");
-    avatar.src = "/chatbot.png";
+    avatar.src = "https://nbbot.netlify.app/chatbot.png";
     avatar.className = "nabo-avatar typing";
     avatar.alt = "Nabo Companion";
     typingDiv.appendChild(avatar);
@@ -569,6 +663,7 @@
     createStyles();
     createBubble();
     createPanel();
+    setTimeout(showGreetingTooltip, 2000);
   }
 
   init();
