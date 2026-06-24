@@ -13,6 +13,41 @@
 
   let isOpen = false;
   let messageHistory = [];
+  let inactivityTimer = null;
+  const INACTIVITY_MS = 60000; // 1 minute
+
+  function resetInactivityTimer() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      clearChat();
+    }, INACTIVITY_MS);
+  }
+
+  function clearChat() {
+    messageHistory = [];
+    const messagesContainer = document.querySelector(".nabo-messages");
+    if (messagesContainer) {
+      messagesContainer.innerHTML = "";
+      const messageDiv = document.createElement("div");
+      messageDiv.className = "nabo-message assistant";
+      const avatar = document.createElement("img");
+      avatar.src = "https://nbbot.netlify.app/chatbot.png";
+      avatar.className = "nabo-avatar";
+      avatar.alt = "Nabo Companion";
+      messageDiv.appendChild(avatar);
+      const contentDiv = document.createElement("div");
+      contentDiv.className = "nabo-message-content";
+      contentDiv.innerHTML = "Hello, I'm your Nabo Capital Companion. How can I help you today?";
+      messageDiv.appendChild(contentDiv);
+      messagesContainer.appendChild(messageDiv);
+      messageHistory.push({ role: "assistant", content: "Hello, I'm your Nabo Capital Companion. How can I help you today?" });
+    }
+  }
+
+  // Clear chat when tab closes or user leaves
+  window.addEventListener("beforeunload", () => {
+    messageHistory = [];
+  });
 
   function createStyles() {
     const style = document.createElement("style");
@@ -459,8 +494,9 @@
       }
     };
 
-    sendBtn.addEventListener("click", handleSend);
+    sendBtn.addEventListener("click", () => { resetInactivityTimer(); handleSend(); });
     input.addEventListener("keypress", (e) => {
+      resetInactivityTimer();
       if (e.key === "Enter") {
         handleSend();
       }
@@ -644,10 +680,31 @@
     } catch (error) {
       removeTyping();
       console.error("Chat error:", error);
-      addMessage(
-        "assistant",
-        "Sorry, I encountered an error. Please try again."
-      );
+      let countdown = 5;
+      const errorMsg = { role: "assistant", content: `Sorry, I encountered an error. Chat will reset in ${countdown}s...` };
+      messageHistory.push(errorMsg);
+      const messagesContainer = document.querySelector(".nabo-messages");
+      const errorDiv = document.createElement("div");
+      errorDiv.className = "nabo-message assistant";
+      const avatar = document.createElement("img");
+      avatar.src = "https://nbbot.netlify.app/chatbot.png";
+      avatar.className = "nabo-avatar";
+      avatar.alt = "Nabo Companion";
+      errorDiv.appendChild(avatar);
+      const contentDiv = document.createElement("div");
+      contentDiv.className = "nabo-message-content";
+      contentDiv.innerHTML = `Sorry, I encountered an error. Chat will reset in ${countdown}s...`;
+      errorDiv.appendChild(contentDiv);
+      messagesContainer.appendChild(errorDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        contentDiv.innerHTML = `Sorry, I encountered an error. Chat will reset in ${countdown}s...`;
+        if (countdown <= 0) {
+          clearInterval(countdownInterval);
+          clearChat();
+        }
+      }, 1000);
     }
   }
 
